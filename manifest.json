@@ -1,0 +1,31 @@
+{
+    "manifest_version": 2,
+    "name": "SAP Table Extractor",
+    "version": "1.0",
+    "description": "Extracts information from SAP tables and formats it",
+    "permissions": [
+      "activeTab",
+      "https://*/*",
+      "http://*/*"
+    ],
+    "browser_action": {
+      "default_title": "Extract SAP Table"
+    },
+    "background": {
+      "scripts": ["background.js"],
+      "persistent": false
+    },
+    "content_scripts": [
+      {
+        "matches": ["<all_urls>"],
+        "js": ["content.js"],
+        "run_at": "document_end"
+      }
+    ],
+    "web_accessible_resources": [
+      "injected.js"
+    ],
+    "externally_connectable": {
+      "matches": ["<all_urls>"]
+    }
+  }
