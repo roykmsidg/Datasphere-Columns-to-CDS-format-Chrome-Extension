@@ -166,7 +166,8 @@ async function extractData() {
 
       console.log(`Extracted ${result.length} rows`);
       console.log(result.join('\n'));
-      alert(`Data extracted! ${result.length} rows found. Check the console for results.`);
+      
+      showCustomDialog(result);
 
       // Send the extracted data to the background script
       chrome.runtime.sendMessage(myExtId, {
@@ -179,6 +180,73 @@ async function extractData() {
       console.error('Error during data extraction:', error);
       alert('An error occurred during data extraction. Check the console for details.');
   }
+}
+
+function showCustomDialog(result) {
+  // Create dialog elements
+  const dialog = document.createElement('div');
+  dialog.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    z-index: 10000;
+  `;
+
+  const message = document.createElement('p');
+  message.textContent = `Data extracted! ${result.length} rows found.`;
+
+  const copyButton = document.createElement('button');
+  copyButton.textContent = 'Copy to Clipboard';
+  copyButton.style.marginRight = '10px';
+  copyButton.onclick = () => {
+    navigator.clipboard.writeText(result.join('\n'))
+      .then(() => {
+        copyButton.textContent = 'Copied!';
+        setTimeout(() => copyButton.textContent = 'Copy to Clipboard', 2000);
+      })
+      .catch(err => console.error('Failed to copy: ', err));
+  };
+
+  const closeButton = document.createElement('button');
+  closeButton.textContent = 'Close';
+  closeButton.onclick = () => document.body.removeChild(dialog);
+
+  // Assemble and show dialog
+  dialog.appendChild(message);
+  dialog.appendChild(copyButton);
+  dialog.appendChild(closeButton);
+  document.body.appendChild(dialog);
+}
+
+function showErrorDialog(errorMessage) {
+  const dialog = document.createElement('div');
+  dialog.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    z-index: 10000;
+  `;
+
+  const message = document.createElement('p');
+  message.textContent = errorMessage;
+
+  const closeButton = document.createElement('button');
+  closeButton.textContent = 'Close';
+  closeButton.onclick = () => document.body.removeChild(dialog);
+
+  dialog.appendChild(message);
+  dialog.appendChild(closeButton);
+  document.body.appendChild(dialog);
 }
 
 // We need to wait for the UI5 core to be initialized
