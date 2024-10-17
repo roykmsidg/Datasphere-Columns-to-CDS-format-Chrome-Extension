@@ -4,6 +4,37 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+function getTableData(table) {
+  console.log('Attempting to get table data');
+
+  const binding = table.getBinding('rows');
+  if (binding) {
+      console.log('Binding found');
+      const context = binding.getContexts();
+      if (context && context.length > 0) {
+          return context.map(c => c.getObject());
+      }
+  }
+
+  const model = table.getModel();
+  if (model) {
+      console.log('Model found');
+      const data = model.getData();
+      if (Array.isArray(data)) {
+          return data;
+      } else if (typeof data === 'object') {
+          for (let key in data) {
+              if (Array.isArray(data[key])) {
+                  return data[key];
+              }
+          }
+      }
+  }
+
+  console.log('Unable to retrieve data from binding or model');
+  return null;
+}
+
 async function scrollTable() {
   const scrollContainer = document.querySelector('.sapUiTableVSb');
   if (!scrollContainer) {
@@ -30,8 +61,62 @@ async function scrollTable() {
     }
 
     lastScrollTop = scrollContainer.scrollTop;
-    console.log('Scrolled to:', scrollContainer.scrollTop);
+    // console.log('Scrolled to:', scrollContainer.scrollTop);
   }
+}
+
+function extractValue(item) {
+  if (item.__displayType && typeof item.__displayType === 'object' && 'value' in item.__displayType) {
+      return item.__displayType.value;
+  } else if (item.length !== undefined) {
+      return item.length;
+  } else {
+      return '';
+  }
+}
+
+function extractDataFromModel() {
+  console.log('Extracting data from model');
+  const table = sap.ui.getCore().byId("shellMainContent---databuilderComponent---databuilderWorkbench--graphSplitView--PropertyPanel--ermodeler-properties-EntityProperties--EntityPropertiesView--editAttributesDialogView--editModeBusinessAttributesTable");
+
+  if (!table) {
+      console.error('Table not found');
+      return [];
+  }
+
+  const data = getTableData(table);
+
+  if (!data) {
+      console.error('No data found in table');
+      return [];
+  }
+
+  console.log('Data found:', data);
+
+  return data.map(item => {
+
+      return {
+          isKey: item.isKey,
+          technicalName: item.technicalName || item.name,
+          dataType: item.dataType || item.type,
+          description: item.description,
+          length: extractValue(item)
+      };
+  });
+}
+
+function formatResult(data) {
+  return data.map(item => {
+      let dataType = item.dataType;
+      // Remove 'cds.' prefix if it exists
+      if (dataType.startsWith('cds.')) {
+          dataType = dataType.substring(4);
+      }
+      // Ensure the technical name is padded to a length of 20 characters
+      const paddedName = item.technicalName.padEnd(20);
+      const lengthValue = item.length !== undefined && item.length !== '' ? item.length : '';
+      return `${item.isKey ? 'key ' : '   '}${paddedName}: ${extractValue(item)};`;
+  });
 }
 
 function extractRowData(row) {
@@ -75,21 +160,33 @@ async function extractData() {
     await sleep(500);
   }
 
-  const result = Array.from(allData.values()).map(data => 
-    `${data.isKey ? 'key ' : ''}${data.technicalName} : ${data.dataType};`
-  );
+  try {
+      const data = extractDataFromModel();
+      const result = formatResult(data);
 
-  console.log(result.join('\n'));
-  alert(`Data extracted! ${result.length} rows found. Check the console for results.`);
+      console.log(`Extracted ${result.length} rows`);
+      console.log(result.join('\n'));
+      alert(`Data extracted! ${result.length} rows found. Check the console for results.`);
 
-  // Send the extracted data to the background script
-  chrome.runtime.sendMessage(myExtId, {
-    action: "extractedData",
-    data: result
-  }, response => {
-    console.log("Response from background:", response);
-  });
+      // Send the extracted data to the background script
+      chrome.runtime.sendMessage(myExtId, {
+          action: "extractedData",
+          data: result
+      }, response => {
+
+      });
+  } catch (error) {
+      console.error('Error during data extraction:', error);
+      alert('An error occurred during data extraction. Check the console for details.');
+  }
 }
 
-// Start extraction immediately when injected
-extractData();
+// We need to wait for the UI5 core to be initialized
+if (sap && sap.ui && sap.ui.getCore()) {
+  sap.ui.getCore().attachInit(function() {
+      // Start extraction when UI5 is ready
+      extractData();
+  });
+} else {
+  console.error('SAP UI5 not found on this page');
+}
