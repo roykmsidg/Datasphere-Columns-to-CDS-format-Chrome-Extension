@@ -1,5 +1,4 @@
-1. Download everything 
-2. Put it into a folder
+1. Download the latest release 
 3. Navigate to the chrome://extensions/ 
 4. Enable "Developer Mode"
 5. Upload the downlaoded folder
@@ -7,4 +6,4 @@
 7. Navigate to the columns you want to export
 8. Tap on the "Pen" icon
 9. Trigger the plugin (FINALLY!)
-10. Copy and paste.
+10. Copy and paste happily
