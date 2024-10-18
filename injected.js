@@ -166,7 +166,7 @@ async function extractData() {
 
       console.log(`Extracted ${result.length} rows`);
       console.log(result.join('\n'));
-      
+
       showCustomDialog(result);
 
       // Send the extracted data to the background script
@@ -184,11 +184,26 @@ async function extractData() {
 
 function showCustomDialog(result) {
   // Create dialog elements
+  const dialogBg = document.createElement('div');
+  dialogBg.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    height: 100%
+    width: 100%;
+    background-color: rgb(12 16 13);
+    z-index: 9999;
+    width: 100%;
+    height: 200%;
+    opacity: 0.8;
+  `
   const dialog = document.createElement('div');
   dialog.style.cssText = `
     position: fixed;
     top: 50%;
     left: 50%;
+    width: 40vw;
     transform: translate(-50%, -50%);
     background: white;
     padding: 20px;
@@ -199,6 +214,11 @@ function showCustomDialog(result) {
 
   const message = document.createElement('p');
   message.textContent = `Data extracted! ${result.length} rows found.`;
+  const cdsText = document.createElement('textarea');
+  cdsText.style.height = "200px"
+  cdsText.style.width = "100%"
+  cdsText.style.overflow = "scroll"
+  cdsText.textContent = result.join('\n')
 
   const copyButton = document.createElement('button');
   copyButton.textContent = 'Copy to Clipboard';
@@ -214,12 +234,14 @@ function showCustomDialog(result) {
 
   const closeButton = document.createElement('button');
   closeButton.textContent = 'Close';
-  closeButton.onclick = () => document.body.removeChild(dialog);
+  closeButton.onclick = () => {document.body.removeChild(dialog), document.body.removeChild(dialogBg)};
 
   // Assemble and show dialog
+  dialog.appendChild(cdsText);
   dialog.appendChild(message);
   dialog.appendChild(copyButton);
   dialog.appendChild(closeButton);
+  document.body.appendChild(dialogBg);
   document.body.appendChild(dialog);
 }
 
@@ -237,15 +259,31 @@ function showErrorDialog(errorMessage) {
     z-index: 10000;
   `;
 
+  const dialogBg = document.createElement('div');
+  dialogBg.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    height: 100%
+    width: 100%;
+    background-color: rgb(12 16 13);
+    z-index: 9999;
+    width: 100%;
+    height: 200%;
+    opacity: 0.8;
+  `
+
   const message = document.createElement('p');
   message.textContent = errorMessage;
 
   const closeButton = document.createElement('button');
   closeButton.textContent = 'Close';
-  closeButton.onclick = () => document.body.removeChild(dialog);
+  closeButton.onclick = () => {document.body.removeChild(dialog), document.body.removeChild(dialogBg)};
 
   dialog.appendChild(message);
   dialog.appendChild(closeButton);
+  document.body.appendChild(dialogBg);
   document.body.appendChild(dialog);
 }
 
